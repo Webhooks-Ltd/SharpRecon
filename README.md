@@ -1,5 +1,10 @@
 # SharpRecon
 
+[![CI](https://github.com/Webhooks-Ltd/SharpRecon/actions/workflows/ci.yml/badge.svg)](https://github.com/Webhooks-Ltd/SharpRecon/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+[![MCP](https://img.shields.io/badge/MCP-stdio-green.svg)](https://modelcontextprotocol.io/)
+
 A .NET 10.0 stdio MCP server that lets AI agents inspect the .NET ecosystem -- download NuGet packages, browse types, read signatures with XML docs, and decompile source.
 
 ## Quick start
