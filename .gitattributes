@@ -1,0 +1,25 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+# C# source files
+*.cs text diff=csharp
+*.csproj text
+*.sln text eol=crlf
+*.props text
+*.targets text
+# Markdown
+*.md text diff=markdown
+# Config
+*.json text
+*.xml text
+*.yaml text
+*.yml text
+# Shell scripts
+*.ps1 text eol=crlf
+*.sh text eol=lf
+# Binary
+*.dll binary
+*.exe binary
+*.pdb binary
+*.nupkg binary
+# LFS
+*.nupkg filter=lfs diff=lfs merge=lfs -text
