@@ -6,9 +6,18 @@ internal static class MetadataLoadContextFactory
 {
     public static MetadataLoadContext Create(IReadOnlyList<string> assemblyPaths)
     {
-        var resolver = new PathAssemblyResolver(assemblyPaths);
+        var deduplicated = DeduplicateByAssemblyName(assemblyPaths);
+        var resolver = new PathAssemblyResolver(deduplicated);
         var coreAssemblyName = FindCoreAssembly(assemblyPaths);
         return new MetadataLoadContext(resolver, coreAssemblyName);
+    }
+
+    private static IReadOnlyList<string> DeduplicateByAssemblyName(IReadOnlyList<string> assemblyPaths)
+    {
+        var seen = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in assemblyPaths)
+            seen[Path.GetFileNameWithoutExtension(path)] = path;
+        return seen.Values.ToList();
     }
 
     private static string FindCoreAssembly(IReadOnlyList<string> assemblyPaths)
