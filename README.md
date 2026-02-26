@@ -80,6 +80,12 @@ dotnet run --project tests/SharpRecon.Tests
 
 The `launcher.ps1` script copies the published binaries to a temporary directory before running the server. This prevents file-locking conflicts when you rebuild the project while the MCP server is still running. Stale shadow copies older than one hour are cleaned up automatically on launch.
 
+After making code changes, you must **republish** before restarting the MCP server — the launcher reads from the publish directory, not the build output:
+
+```bash
+dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish
+```
+
 ## License
 
 MIT
