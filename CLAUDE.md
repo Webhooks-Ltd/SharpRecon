@@ -42,9 +42,13 @@ Lowercase after prefix, imperative mood, under 72 chars. Optional scope: `feat(i
 
 - `src/SharpRecon/NuGet/` — NuGet download service and tools
 - `src/SharpRecon/Inspection/` — Type inspection, signature rendering, XML docs, and tools
+- `src/SharpRecon/Prompts/` — MCP prompt templates (workflow guidance for LLMs)
+- `src/SharpRecon/Prompts/` — MCP prompt templates (workflow guidance for LLMs)
 - `src/SharpRecon/Decompilation/` — ICSharpCode.Decompiler wrapper and tools
 - `src/SharpRecon/Infrastructure/` — Package cache, framework resolution, dependency resolution
 - `tests/SharpRecon.Tests/` — Unit and integration tests
+- `.github/workflows/ci.yml` — Build + test on push/PR to main
+- `.github/workflows/release.yml` — On `v*` tag: validates `plugin.json` version matches tag, builds self-contained binaries (win-x64, linux-x64, osx-x64, osx-arm64), creates GitHub release with tar.gz archives
 
 ## Key Design Decisions
 
