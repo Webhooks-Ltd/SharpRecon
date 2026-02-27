@@ -120,7 +120,3 @@ dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish
 ```
 
 When developing locally, republish after code changes -- the launcher reads from the publish directory, not build output.
-
-## License
-
-[MIT](LICENSE)
