@@ -10,7 +10,7 @@ namespace SharpRecon.NuGet;
 internal sealed class AssemblyListTool
 {
     [McpServerTool(Name = "assembly_list")]
-    [Description("Lists assemblies in a cached NuGet package, grouped by TFM. Use to discover assembly names before calling type_list or type_search.")]
+    [Description("Lists assemblies in a cached NuGet package, grouped by TFM. Use to discover assembly names before calling type_list. Not required before type_search (which searches all assemblies automatically).")]
     public static CallToolResult ListAssemblies(
         [Description("NuGet package ID")] string packageId,
         [Description("Exact package version (from nuget_download)")] string version,

@@ -7,9 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5]
+
 ### Added
 
 - `nuget_search` — Search NuGet.org for packages by query, returning package IDs, versions, descriptions, and download counts
+- `investigate_package` prompt — Guides step-by-step investigation of a NuGet package from download through decompilation
+- `compare_versions` prompt — Guides comparison of a package's public API surface between two versions
+
+### Improved
+
+- All tool descriptions refined for better LLM tool selection and disambiguation
+- `nuget_download` description now links back to `nuget_search` when package ID is unknown
+- `assembly_list` clarifies it is not required before `type_search`
+- `type_list` / `type_search` descriptions now emphasize input requirements as the selection criterion
+- `type_detail` / `member_detail` descriptions include "Fast — no decompilation" performance signal
+- `parameterTypes` descriptions include common CLR alias mappings (string→System.String, etc.)
+- `assemblyName` hint descriptions clarify consequence of omission
+- `type_search` empty results message now suggests actionable next steps
+- `plugin.json` keywords expanded for discoverability
 
 ## [0.1.4]
 

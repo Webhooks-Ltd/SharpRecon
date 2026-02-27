@@ -20,7 +20,7 @@ internal sealed class DecompileMemberTool
         AssemblyDecompiler decompiler,
         IPackageCache packageCache,
         CancellationToken ct,
-        [Description("Fully qualified CLR parameter types for overload disambiguation, e.g. ['System.String', 'System.Int32']. Use CLR names, not C# aliases.")] string[]? parameterTypes = null,
+        [Description("Fully qualified CLR parameter types for overload disambiguation, e.g. ['System.String', 'System.Int32']. Use CLR names, not C# aliases (string->System.String, int->System.Int32, bool->System.Boolean, object->System.Object).")] string[]? parameterTypes = null,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null)
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>

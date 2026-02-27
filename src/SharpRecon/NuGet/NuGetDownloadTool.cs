@@ -9,7 +9,7 @@ namespace SharpRecon.NuGet;
 internal sealed class NuGetDownloadTool
 {
     [McpServerTool(Name = "nuget_download")]
-    [Description("Downloads a NuGet package to the local cache. Returns resolved version, cache path, and available TFMs. Call this first — all other tools require the exact version from this response.")]
+    [Description("Downloads a NuGet package to the local cache. Returns resolved version, cache path, and available TFMs. Call this before any inspection or decompilation tool — they require the exact version from this response. If you don't know the exact package ID, call nuget_search first.")]
     public static async Task<CallToolResult> DownloadAsync(
         [Description("NuGet package ID, e.g. 'Newtonsoft.Json'")] string packageId,
         INuGetService nuGetService,

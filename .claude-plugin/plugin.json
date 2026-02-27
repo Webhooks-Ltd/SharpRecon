@@ -1,11 +1,11 @@
 {
   "name": "sharp-recon",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": ".NET MCP server for NuGet package inspection, type introspection, and decompilation",
   "author": {
     "name": "Webhooks Ltd"
   },
   "repository": "https://github.com/Webhooks-Ltd/SharpRecon",
   "license": "MIT",
-  "keywords": ["dotnet", "nuget", "decompilation", "mcp"]
+  "keywords": ["dotnet", "nuget", "decompilation", "mcp", "csharp", "assembly", "reflection", "api"]
 }

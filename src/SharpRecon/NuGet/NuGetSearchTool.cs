@@ -9,7 +9,7 @@ namespace SharpRecon.NuGet;
 internal sealed class NuGetSearchTool
 {
     [McpServerTool(Name = "nuget_search")]
-    [Description("Searches NuGet.org for packages matching a query. Returns package IDs, latest versions, and descriptions. Use this to discover package IDs when you don't already know them, then call nuget_download to proceed.")]
+    [Description("Searches NuGet.org for packages matching a query. Returns package IDs, latest versions, descriptions, and download counts. Use when you don't know the exact package ID, then call nuget_download to proceed.")]
     public static async Task<CallToolResult> SearchAsync(
         [Description("Search terms, e.g. 'json serializer' or 'Serilog' or 'Microsoft.Extensions'")] string query,
         INuGetService nuGetService,

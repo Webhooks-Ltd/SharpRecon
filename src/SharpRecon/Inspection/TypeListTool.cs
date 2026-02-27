@@ -10,7 +10,7 @@ namespace SharpRecon.Inspection;
 internal sealed class TypeListTool
 {
     [McpServerTool(Name = "type_list")]
-    [Description("Lists all public types in an assembly, grouped by namespace. Returns type full names and kinds (class, struct, enum, interface, delegate). For name-based search, use type_search instead.")]
+    [Description("Lists all public types in a specific assembly, grouped by namespace. Requires assemblyName (from assembly_list). Returns type full names and kinds (class, struct, enum, interface, delegate). For name-based search across all assemblies, use type_search instead.")]
     public static async Task<CallToolResult> ListTypesAsync(
         [Description("NuGet package ID")] string packageId,
         [Description("Exact package version (from nuget_download)")] string version,

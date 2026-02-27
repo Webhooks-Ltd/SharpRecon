@@ -10,7 +10,7 @@ namespace SharpRecon.Inspection;
 internal sealed class TypeDetailTool
 {
     [McpServerTool(Name = "type_detail")]
-    [Description("Returns the full C# type declaration: XML doc summary, base types, and all public member signatures grouped by kind. Use after type_list/type_search to inspect a type. For implementation source, use decompile_type.")]
+    [Description("Returns the full C# type declaration: XML doc summary, base types, and all public member signatures grouped by kind. Fast — no decompilation. Use after type_list/type_search to inspect a type. For implementation source, use decompile_type.")]
     public static async Task<CallToolResult> GetTypeDetailAsync(
         [Description("NuGet package ID")] string packageId,
         [Description("Exact package version (from nuget_download)")] string version,
@@ -19,7 +19,7 @@ internal sealed class TypeDetailTool
         IPackageCache packageCache,
         CancellationToken ct,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null,
-        [Description("Assembly name hint (without .dll). Speeds lookup.")] string? assemblyName = null)
+        [Description("Assembly name hint (without .dll), e.g. from type_search results. Omit to search all assemblies (slower).")] string? assemblyName = null)
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {

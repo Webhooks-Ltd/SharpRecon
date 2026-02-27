@@ -10,7 +10,7 @@ namespace SharpRecon.Inspection;
 internal sealed class MemberDetailTool
 {
     [McpServerTool(Name = "member_detail")]
-    [Description("Returns all overload signatures and XML docs for a specific member of a type. Use after type_detail to drill into one member. For implementation source, use decompile_member.")]
+    [Description("Returns all overload signatures and XML docs for a specific member of a type. Fast — no decompilation. Use after type_detail to drill into one member. For implementation source, use decompile_member.")]
     public static async Task<CallToolResult> GetMemberDetailAsync(
         [Description("NuGet package ID")] string packageId,
         [Description("Exact package version (from nuget_download)")] string version,
@@ -19,9 +19,9 @@ internal sealed class MemberDetailTool
         IAssemblyInspector inspector,
         IPackageCache packageCache,
         CancellationToken ct,
-        [Description("Fully qualified CLR parameter types for overload filtering, e.g. ['System.Object', 'System.String']. Use CLR names, not C# aliases.")] string[]? parameterTypes = null,
+        [Description("Fully qualified CLR parameter types for overload filtering, e.g. ['System.Object', 'System.String']. Use CLR names, not C# aliases (string->System.String, int->System.Int32, bool->System.Boolean, object->System.Object).")] string[]? parameterTypes = null,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null,
-        [Description("Assembly name hint (without .dll). Speeds lookup.")] string? assemblyName = null)
+        [Description("Assembly name hint (without .dll), e.g. from type_search results. Omit to search all assemblies (slower).")] string? assemblyName = null)
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {

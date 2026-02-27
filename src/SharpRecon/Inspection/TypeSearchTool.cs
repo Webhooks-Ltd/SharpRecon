@@ -10,7 +10,7 @@ namespace SharpRecon.Inspection;
 internal sealed class TypeSearchTool
 {
     [McpServerTool(Name = "type_search")]
-    [Description("Searches for public types by name across all assemblies in a package. Case-insensitive substring match. For a full listing of one assembly, use type_list instead.")]
+    [Description("Searches for public types by name across all assemblies in a package. Case-insensitive substring match. Does not require assemblyName. For a complete listing of one assembly, use type_list instead.")]
     public static async Task<CallToolResult> SearchTypesAsync(
         [Description("NuGet package ID")] string packageId,
         [Description("Exact package version (from nuget_download)")] string version,
@@ -42,7 +42,7 @@ internal sealed class TypeSearchTool
 
             if (result.Matches.Count == 0)
             {
-                sb.AppendLine("No matching types found.");
+                sb.AppendLine("No matching types found. Try a broader search term, or call type_list with a specific assemblyName to browse all types.");
                 return sb.ToString().TrimEnd();
             }
 

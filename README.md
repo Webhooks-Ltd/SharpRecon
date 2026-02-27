@@ -66,6 +66,13 @@ Create `.vscode/mcp.json` in your workspace:
 
 All inspection and decompilation tools require the **exact version** returned by `nuget_download`. Assembly names are specified without the `.dll` extension. When `tfm` is omitted, the server auto-selects the highest available (`net*` > `netstandard*` > `netcoreapp*`).
 
+## Prompts
+
+| Prompt | Description | Parameters |
+|--------|-------------|------------|
+| `investigate_package` | Guided step-by-step investigation of a NuGet package | `package` (name or search query), `goal` (optional) |
+| `compare_versions` | Compare public API surface between two package versions | `packageId`, `fromVersion`, `toVersion` |
+
 ## Typical workflow
 
 An agent drills down from package to source through progressively narrower tools:
