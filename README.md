@@ -66,12 +66,14 @@ Create `.vscode/mcp.json` in your workspace:
 
 All inspection and decompilation tools require the **exact version** returned by `nuget_download`. Assembly names are specified without the `.dll` extension. When `tfm` is omitted, the server auto-selects the highest available (`net*` > `netstandard*` > `netcoreapp*`).
 
-## Prompts
+## Skills
 
-| Prompt | Description | Parameters |
-|--------|-------------|------------|
-| `investigate_package` | Guided step-by-step investigation of a NuGet package | `package` (name or search query), `goal` (optional) |
-| `compare_versions` | Compare public API surface between two package versions | `packageId`, `fromVersion`, `toVersion` |
+When installed as a Claude Code plugin, the following slash commands are available:
+
+| Skill | Description | Usage |
+|-------|-------------|-------|
+| `/investigate-package` | Guided step-by-step investigation of a NuGet package | `/investigate-package Newtonsoft.Json` |
+| `/compare-versions` | Compare public API surface between two package versions | `/compare-versions Newtonsoft.Json 12.0.3 13.0.3` |
 
 ## Typical workflow
 

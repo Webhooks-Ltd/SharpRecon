@@ -7,13 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6]
+
+### Changed
+
+- Replaced MCP prompts with plugin skills (slash commands) for Claude Code usability
+- `/investigate-package` — guided NuGet package investigation workflow
+- `/compare-versions` — API surface comparison between package versions
+
 ## [0.1.5]
 
 ### Added
 
 - `nuget_search` — Search NuGet.org for packages by query, returning package IDs, versions, descriptions, and download counts
-- `investigate_package` prompt — Guides step-by-step investigation of a NuGet package from download through decompilation
-- `compare_versions` prompt — Guides comparison of a package's public API surface between two versions
+- `/investigate-package` skill — Guides step-by-step investigation of a NuGet package from download through decompilation
+- `/compare-versions` skill — Guides comparison of a package's public API surface between two versions
 
 ### Improved
 

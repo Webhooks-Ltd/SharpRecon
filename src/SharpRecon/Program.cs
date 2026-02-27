@@ -30,7 +30,6 @@ builder.Services.AddSingleton<AssemblyDecompiler>();
 builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
-    .WithToolsFromAssembly()
-    .WithPromptsFromAssembly();
+    .WithToolsFromAssembly();
 
 await builder.Build().RunAsync();
