@@ -13,13 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.4]
 
-### Fixed
-
-- Plugin fails to start on Windows because `bash` is not in the system PATH; replaced `launcher.sh` with cross-platform `launcher.js` using Node.js
-- Launcher fails on Windows because it expects a `.zip` release asset but CI publishes `.tar.gz` for all platforms
-
-## [0.1.2]
-
 ### Added
 
 - `nuget_download` — Download NuGet packages with exact, wildcard, or latest version resolution
@@ -35,11 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - XML doc comment parsing from sidecar `.xml` files
 - Full C# signature rendering with nullability, generics, constraints, default values
 - Record detection heuristic (best-effort)
-- Shadow-copy launcher script (`launcher.sh`) for file-locking prevention
+- Cross-platform Node.js launcher (`launcher.js`) with shadow-copy, auto-download from GitHub releases, and auto-update
 - Claude Code plugin support (`.claude-plugin/plugin.json` + `.mcp.json`)
-- Auto-download of pre-built binaries from GitHub releases on first launch
 - GitHub Actions release workflow for cross-platform self-contained builds (win-x64, linux-x64, osx-x64, osx-arm64)
-- Bash launcher (`launcher.sh`) — no PowerShell dependency
 
 ### Fixed
 
