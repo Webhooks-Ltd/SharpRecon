@@ -71,6 +71,54 @@ internal sealed partial class NuGetService : INuGetService
         return results;
     }
 
+    public async Task<PackageHealthInfo> GetPackageHealthAsync(string packageId, NuGetVersion resolvedVersion, CancellationToken ct)
+    {
+        var repository = Repository.Factory.GetCoreV3(NuGetSourceUrl);
+        var cacheContext = new SourceCacheContext();
+        var nugetLogger = global::NuGet.Common.NullLogger.Instance;
+
+        var metadataResource = await repository.GetResourceAsync<PackageMetadataResource>(ct);
+        var identity = new PackageIdentity(packageId, resolvedVersion);
+        var metadata = await metadataResource.GetMetadataAsync(identity, cacheContext, nugetLogger, ct);
+
+        if (metadata is null)
+            throw new InvalidOperationException($"No metadata found for '{packageId}' version '{resolvedVersion}'");
+
+        var deprecation = await metadata.GetDeprecationMetadataAsync();
+        DeprecationInfo? deprecationInfo = null;
+        if (deprecation is not null)
+        {
+            AlternatePackageInfo? alternate = null;
+            if (deprecation.AlternatePackage is not null)
+            {
+                alternate = new AlternatePackageInfo(
+                    deprecation.AlternatePackage.PackageId,
+                    deprecation.AlternatePackage.Range.ToString());
+            }
+
+            deprecationInfo = new DeprecationInfo(
+                deprecation.Reasons?.ToList() ?? [],
+                deprecation.Message,
+                alternate);
+        }
+
+        var vulnerabilities = metadata.Vulnerabilities?
+            .Select(v => new VulnerabilityInfo(MapSeverity(v.Severity), v.AdvisoryUrl))
+            .ToList()
+            ?? [];
+
+        return new PackageHealthInfo(metadata.Published, deprecationInfo, vulnerabilities);
+    }
+
+    internal static string MapSeverity(int severity) => severity switch
+    {
+        0 => "Low",
+        1 => "Moderate",
+        2 => "High",
+        3 => "Critical",
+        _ => $"Unknown({severity})"
+    };
+
     internal static string FormatDownloadCount(long count) => count switch
     {
         >= 1_000_000_000 => $"{count / 1_000_000_000.0:0.#}B",

@@ -85,7 +85,7 @@ internal sealed class AssemblyInspector : IAssemblyInspector
     }
 
     public async Task<TypeDetailResult> GetTypeDetailAsync(
-        string packageId, string version, string? tfm, string? assemblyName, string typeName, CancellationToken ct)
+        string packageId, string version, string? tfm, string? assemblyName, string typeName, bool includeInherited, CancellationToken ct)
     {
         tfm ??= SelectBestTfm(packageId, version);
         var (resolution, mlc, type) = await ResolveTypeAsync(packageId, version, tfm, assemblyName, typeName, preferRef: true, ct);
@@ -95,7 +95,7 @@ internal sealed class AssemblyInspector : IAssemblyInspector
             var typeDocId = $"T:{typeName}";
             var typeSummary = xmlDocs?.GetDocumentation(typeDocId)?.Summary;
             var typeDecl = TypeRenderer.RenderTypeDeclaration(type);
-            var memberGroups = BuildMemberGroups(type, xmlDocs);
+            var memberGroups = BuildMemberGroups(type, xmlDocs, includeInherited);
 
             return new TypeDetailResult(typeDecl, typeSummary, memberGroups, resolution.UnresolvedDependencies);
         }
@@ -262,12 +262,14 @@ internal sealed class AssemblyInspector : IAssemblyInspector
         return Path.GetFileNameWithoutExtension(assemblyPath);
     }
 
-    private static IReadOnlyList<MemberGroup> BuildMemberGroups(Type type, XmlDocCollection? xmlDocs)
+    private static IReadOnlyList<MemberGroup> BuildMemberGroups(Type type, XmlDocCollection? xmlDocs, bool includeInherited)
     {
         var groups = new List<MemberGroup>();
 
         var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             .Where(c => !c.IsPrivate && !c.IsAssembly);
+        if (!includeInherited)
+            ctors = ctors.Where(c => c.DeclaringType == type);
         var ctorMembers = ctors.Select(c => new MemberSignature(
             ".ctor",
             TypeRenderer.RenderConstructorSignature(c),
@@ -277,6 +279,8 @@ internal sealed class AssemblyInspector : IAssemblyInspector
 
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             .Where(p => IsPublicOrProtected(p));
+        if (!includeInherited)
+            properties = properties.Where(p => p.DeclaringType == type);
         var propMembers = properties.Select(p => new MemberSignature(
             p.Name,
             TypeRenderer.RenderPropertySignature(p),
@@ -286,6 +290,8 @@ internal sealed class AssemblyInspector : IAssemblyInspector
 
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             .Where(m => !m.IsSpecialName && (m.IsPublic || m.IsFamily || m.IsFamilyOrAssembly));
+        if (!includeInherited)
+            methods = methods.Where(m => m.DeclaringType == type);
         var methodMembers = methods.Select(m => new MemberSignature(
             m.Name,
             TypeRenderer.RenderMethodSignature(m),
@@ -294,7 +300,9 @@ internal sealed class AssemblyInspector : IAssemblyInspector
             groups.Add(new MemberGroup("Methods", methodMembers));
 
         var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
-            .Where(f => f.IsPublic || f.IsFamily || f.IsFamilyOrAssembly);
+            .Where(f => !f.IsSpecialName && (f.IsPublic || f.IsFamily || f.IsFamilyOrAssembly));
+        if (!includeInherited)
+            fields = fields.Where(f => f.DeclaringType == type);
         var fieldMembers = fields.Select(f => new MemberSignature(
             f.Name,
             TypeRenderer.RenderFieldSignature(f),
@@ -304,6 +312,8 @@ internal sealed class AssemblyInspector : IAssemblyInspector
 
         var events = type.GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             .Where(e => IsPublicOrProtected(e));
+        if (!includeInherited)
+            events = events.Where(e => e.DeclaringType == type);
         var eventMembers = events.Select(e => new MemberSignature(
             e.Name,
             TypeRenderer.RenderEventSignature(e),

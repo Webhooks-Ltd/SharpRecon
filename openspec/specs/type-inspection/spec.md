@@ -69,6 +69,21 @@ The `type_detail` tool SHALL return the full type declaration signature, XML doc
 - **WHEN** agent calls `type_detail` with a type name that does not exist in the assembly
 - **THEN** the tool returns a structured error message. If similar type names exist, include suggestions.
 
+#### Scenario: Inherited members excluded by default
+- **WHEN** agent calls `type_detail` without `includeInherited` (or `includeInherited = false`)
+- **THEN** only members declared directly on the type are returned (inherited members from `System.Object`, `System.Enum`, etc. are excluded)
+- **AND** the internal `value__` backing field on enums is never included
+
+#### Scenario: Inherited members included on request
+- **WHEN** agent calls `type_detail` with `includeInherited = true`
+- **THEN** inherited members from base types are included in the response
+
+#### Scenario: Enum type detail
+- **WHEN** agent calls `type_detail` for an enum like `Newtonsoft.Json.Formatting`
+- **THEN** the response includes the enum's const fields (e.g. `None`, `Indented`) with XML docs
+- **AND** inherited `System.Enum` methods (HasFlag, ToString, etc.) are excluded by default
+- **AND** the internal `value__` field is excluded
+
 ### Requirement: Get member detail with XML docs
 The `member_detail` tool SHALL return full overload signatures and XML doc comments for a specific member of a type. The tool SHALL accept an optional `parameterTypes` parameter (fully qualified CLR type names, e.g. `["System.Object", "System.String"]`) to filter to a specific overload. Use `".ctor"` as `memberName` for constructors.
 

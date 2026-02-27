@@ -71,7 +71,7 @@ public sealed class AssemblyInspectorTests
         var inspector = CreateInspector();
 
         var result = await inspector.GetTypeDetailAsync(
-            PackageId, Version, Tfm, AssemblyName, "Newtonsoft.Json.JsonConvert", CancellationToken.None);
+            PackageId, Version, Tfm, AssemblyName, "Newtonsoft.Json.JsonConvert", false, CancellationToken.None);
 
         result.TypeDeclaration.ShouldContain("public static class JsonConvert");
 

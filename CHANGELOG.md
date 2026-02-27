@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `type_detail` optional `includeInherited` parameter (default `false`) to control whether inherited members from base types are shown
+- `nuget_download` now returns package health metadata: deprecation status, vulnerability advisories, and publish date
+
+### Changed
+
+- Launcher now downloads the exact MCP server version matching `plugin.json` instead of always fetching the latest release
+
+### Fixed
+
+- `type_detail` on enums no longer shows inherited `System.Enum` methods or the internal `value__` backing field
+- `type_detail` no longer shows inherited `System.Object` methods (GetType, ToString, Equals, GetHashCode) by default
+
 ## [0.1.7]
 
 ### Fixed

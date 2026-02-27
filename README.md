@@ -9,11 +9,11 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![MCP](https://img.shields.io/badge/MCP-stdio-green.svg)](https://modelcontextprotocol.io/)
 
-An MCP server that gives AI agents deep visibility into the .NET ecosystem. Search NuGet, browse assemblies, read type signatures with XML docs, and decompile to C# source -- all without leaving the conversation.
+An MCP server that gives AI agents deep visibility into the .NET ecosystem. Search NuGet, browse assemblies, read type signatures with XML docs, and decompile to C# source — all without leaving the conversation.
 
 ## Why SharpRecon?
 
-When an AI agent needs to understand a .NET library -- how to call an API, what overloads exist, what changed between versions -- it typically has to rely on training data that may be outdated or incomplete. SharpRecon lets the agent go straight to the source: download the actual package, inspect its real type signatures and documentation, and decompile the implementation when needed. Every answer comes from the package itself, not from memory.
+When an AI agent needs to understand a .NET library — how to call an API, what overloads exist, what changed between versions — it typically has to rely on training data that may be outdated or incomplete. SharpRecon lets the agent go straight to the source: download the actual package, inspect its real type signatures and documentation, and decompile the implementation when needed. Every answer comes from the package itself, not from memory.
 
 ## Install
 
@@ -52,12 +52,12 @@ node /path/to/SharpRecon/launcher.js
 
 ## Tools
 
-Nine tools arranged as a progressive drill-down pipeline -- start broad, narrow as needed:
+Nine tools arranged as a progressive drill-down pipeline — start broad, narrow as needed:
 
 | Tool | Purpose |
 |------|---------|
 | `nuget_search` | Find packages on NuGet.org by keyword |
-| `nuget_download` | Download a package to the local cache (exact, wildcard, or latest version) |
+| `nuget_download` | Download a package and return version, TFMs, and health (deprecation, vulnerabilities, publish date) |
 | `assembly_list` | List assemblies in a package, grouped by target framework |
 | `type_list` | List all public types in an assembly, grouped by namespace |
 | `type_search` | Search for types by name across all assemblies in a package |
@@ -79,7 +79,7 @@ When installed as a Claude Code plugin, two slash commands provide guided workfl
 
 | Skill | Description | Example |
 |-------|-------------|---------|
-| `/investigate-package` | Step-by-step investigation of a NuGet package -- download, browse types, read signatures, decompile | `/investigate-package Newtonsoft.Json` |
+| `/investigate-package` | Step-by-step investigation of a NuGet package — download, browse types, read signatures, decompile | `/investigate-package Newtonsoft.Json` |
 | `/compare-versions` | Compare the public API surface between two versions to find breaking changes and new APIs | `/compare-versions Newtonsoft.Json 12.0.3 13.0.3` |
 
 ## Typical workflow
@@ -100,9 +100,9 @@ nuget_search             Find a JSON serialization library
 
 The `launcher.js` script handles binary management so you don't have to:
 
-- **Auto-download** -- On first run, fetches the correct release binary for your platform (win-x64, linux-x64, osx-x64, osx-arm64) from GitHub Releases.
-- **Auto-update** -- On subsequent runs, checks for newer releases and upgrades in place.
-- **Shadow-copy** -- Copies binaries to a temp directory before launch, preventing file locks during rebuilds. Stale copies are cleaned up automatically.
+- **Auto-download** — On first run, fetches the correct release binary for your platform (win-x64, linux-x64, osx-x64, osx-arm64) from GitHub Releases.
+- **Version-pinned** — Downloads the exact release matching the plugin version, and upgrades when the plugin updates.
+- **Shadow-copy** — Copies binaries to a temp directory before launch, preventing file locks during rebuilds. Stale copies are cleaned up automatically.
 
 ## Building from source
 
@@ -119,4 +119,4 @@ dotnet test
 dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish
 ```
 
-When developing locally, republish after code changes -- the launcher reads from the publish directory, not build output.
+When developing locally, republish after code changes — the launcher reads from the publish directory, not build output.

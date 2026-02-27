@@ -19,7 +19,8 @@ internal sealed class TypeDetailTool
         IPackageCache packageCache,
         CancellationToken ct,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null,
-        [Description("Assembly name hint (without .dll), e.g. from type_search results. Omit to search all assemblies (slower).")] string? assemblyName = null)
+        [Description("Assembly name hint (without .dll), e.g. from type_search results. Omit to search all assemblies (slower).")] string? assemblyName = null,
+        [Description("Include inherited members from base types (default false).")] bool? includeInherited = null)
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {
@@ -30,7 +31,7 @@ internal sealed class TypeDetailTool
                 throw new InvalidOperationException(
                     $"Package '{packageId}' version '{version}' not found in cache. Call nuget_download first.");
 
-            var result = await inspector.GetTypeDetailAsync(packageId, version, tfm, assemblyName, typeName, ct);
+            var result = await inspector.GetTypeDetailAsync(packageId, version, tfm, assemblyName, typeName, includeInherited ?? false, ct);
 
             var sb = new StringBuilder();
             sb.AppendLine($"```csharp");

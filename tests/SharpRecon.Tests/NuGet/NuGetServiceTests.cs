@@ -94,6 +94,19 @@ public sealed class NuGetServiceTests
     }
 
     [Theory]
+    [InlineData(0, "Low")]
+    [InlineData(1, "Moderate")]
+    [InlineData(2, "High")]
+    [InlineData(3, "Critical")]
+    [InlineData(4, "Unknown(4)")]
+    [InlineData(-1, "Unknown(-1)")]
+    [InlineData(99, "Unknown(99)")]
+    public void MapSeverity_MapsCorrectly(int severity, string expected)
+    {
+        NuGetService.MapSeverity(severity).ShouldBe(expected);
+    }
+
+    [Theory]
     [InlineData(0, "0")]
     [InlineData(999, "999")]
     [InlineData(1_000, "1K")]

@@ -18,6 +18,7 @@ const { pipeline } = require("stream/promises");
 const SCRIPT_DIR = __dirname;
 const PUBLISH_DIR = process.argv[2] || join(SCRIPT_DIR, "src", "SharpRecon", "bin", "publish");
 const REPO = "Webhooks-Ltd/SharpRecon";
+const PLUGIN_JSON = join(SCRIPT_DIR, ".claude-plugin", "plugin.json");
 
 function getRid() {
   const platform = os.platform();
@@ -48,13 +49,10 @@ function httpsGet(url) {
   });
 }
 
-async function getLatestTag() {
+function getPluginTag() {
   try {
-    const res = await httpsGet(`https://api.github.com/repos/${REPO}/releases/latest`);
-    const chunks = [];
-    for await (const chunk of res) chunks.push(chunk);
-    const data = JSON.parse(Buffer.concat(chunks).toString());
-    return data.tag_name || "";
+    const data = JSON.parse(readFileSync(PLUGIN_JSON, "utf8"));
+    return data.version ? `v${data.version}` : "";
   } catch {
     return "";
   }
@@ -62,8 +60,7 @@ async function getLatestTag() {
 
 async function installRelease(targetDir, tag) {
   const rid = getRid();
-  const urlBase = tag ? `releases/download/${tag}` : "releases/latest/download";
-  const url = `https://github.com/${REPO}/${urlBase}/sharp-recon-${rid}.tar.gz`;
+  const url = `https://github.com/${REPO}/releases/download/${tag}/sharp-recon-${rid}.tar.gz`;
 
   process.stderr.write(`Downloading SharpRecon (${rid}) from GitHub releases...\n`);
 
@@ -94,15 +91,13 @@ async function main() {
   const releaseTagFile = join(PUBLISH_DIR, ".release-tag");
   const localTag = existsSync(releaseTagFile) ? readFileSync(releaseTagFile, "utf8").trim() : "";
 
+  const pluginTag = getPluginTag();
+
   if (!hasFiles) {
-    const latestTag = await getLatestTag();
-    await installRelease(PUBLISH_DIR, latestTag);
-  } else if (localTag) {
-    const latestTag = await getLatestTag();
-    if (latestTag && latestTag !== localTag) {
-      process.stderr.write(`Update available: ${localTag} -> ${latestTag}\n`);
-      await installRelease(PUBLISH_DIR, latestTag);
-    }
+    await installRelease(PUBLISH_DIR, pluginTag);
+  } else if (localTag && pluginTag && pluginTag !== localTag) {
+    process.stderr.write(`Update available: ${localTag} -> ${pluginTag}\n`);
+    await installRelease(PUBLISH_DIR, pluginTag);
   }
 
   const baseTemp = join(os.tmpdir(), "SharpRecon");
