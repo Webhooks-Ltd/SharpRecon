@@ -18,16 +18,12 @@ jobs:
         include:
           - rid: win-x64
             os: windows-latest
-            ext: zip
           - rid: linux-x64
             os: ubuntu-latest
-            ext: tar.gz
           - rid: osx-x64
             os: macos-latest
-            ext: tar.gz
           - rid: osx-arm64
             os: macos-latest
-            ext: tar.gz
 
     runs-on: ${{ matrix.os }}
 
@@ -47,19 +43,13 @@ jobs:
           -p:PublishSingleFile=true
           -o publish
 
-      - name: Archive (zip)
-        if: matrix.ext == 'zip'
-        shell: pwsh
-        run: Compress-Archive -Path publish/* -DestinationPath sharp-recon-${{ matrix.rid }}.zip
-
-      - name: Archive (tar.gz)
-        if: matrix.ext == 'tar.gz'
+      - name: Archive
         run: tar -czf sharp-recon-${{ matrix.rid }}.tar.gz -C publish .
 
       - uses: actions/upload-artifact@v4
         with:
           name: sharp-recon-${{ matrix.rid }}
-          path: sharp-recon-${{ matrix.rid }}.${{ matrix.ext }}
+          path: sharp-recon-${{ matrix.rid }}.tar.gz
 
   release:
     needs: build

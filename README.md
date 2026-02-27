@@ -31,7 +31,7 @@ The launcher automatically downloads the correct pre-built binary for your platf
 ### Or add to Claude Code manually
 
 ```bash
-claude mcp add --scope user sharp-recon -- pwsh -File "/path/to/SharpRecon/launcher.ps1"
+claude mcp add --scope user sharp-recon -- bash "/path/to/SharpRecon/launcher.sh"
 ```
 
 ### Add to VS Code / Cursor
@@ -43,8 +43,8 @@ Create `.vscode/mcp.json` in your workspace:
   "servers": {
     "sharp-recon": {
       "type": "stdio",
-      "command": "pwsh",
-      "args": ["-File", "/path/to/SharpRecon/launcher.ps1"]
+      "command": "bash",
+      "args": ["/path/to/SharpRecon/launcher.sh"]
     }
   }
 }
@@ -91,7 +91,7 @@ dotnet run --project tests/SharpRecon.Tests
 
 ## Shadow-copy launcher
 
-The `launcher.ps1` script copies the published binaries to a temporary directory before running the server. This prevents file-locking conflicts when you rebuild the project while the MCP server is still running. Stale shadow copies older than one hour are cleaned up automatically on launch.
+The `launcher.sh` script copies the published binaries to a temporary directory before running the server. This prevents file-locking conflicts when you rebuild the project while the MCP server is still running. Stale shadow copies older than one hour are cleaned up automatically on launch.
 
 If no published binaries are found, the launcher automatically downloads the latest release from GitHub for your platform (win-x64, linux-x64, osx-x64, osx-arm64).
 
