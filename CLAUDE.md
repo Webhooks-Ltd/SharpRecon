@@ -11,6 +11,7 @@
 - Read `openspec/specs/` for detailed requirements and scenarios before implementing
 - Use `openspec status` to check current change progress
 - After code changes, run `dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish` before restarting the MCP server — the launcher reads from the publish directory, not build output
+- Before tagging a release, bump `version` in `.claude-plugin/plugin.json` to match the tag (CI validates this)
 
 ## Commit Convention
 
