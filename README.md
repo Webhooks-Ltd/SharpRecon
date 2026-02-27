@@ -9,109 +9,118 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![MCP](https://img.shields.io/badge/MCP-stdio-green.svg)](https://modelcontextprotocol.io/)
 
-A .NET 10.0 stdio MCP server that lets AI agents inspect the .NET ecosystem -- download NuGet packages, browse types, read signatures with XML docs, and decompile source.
+An MCP server that gives AI agents deep visibility into the .NET ecosystem. Search NuGet, browse assemblies, read type signatures with XML docs, and decompile to C# source -- all without leaving the conversation.
 
-## Quick start
+## Why SharpRecon?
 
-### Build and publish
+When an AI agent needs to understand a .NET library -- how to call an API, what overloads exist, what changed between versions -- it typically has to rely on training data that may be outdated or incomplete. SharpRecon lets the agent go straight to the source: download the actual package, inspect its real type signatures and documentation, and decompile the implementation when needed. Every answer comes from the package itself, not from memory.
 
-```bash
-dotnet publish src/SharpRecon/SharpRecon.csproj -c Release -o src/SharpRecon/bin/publish
-```
+## Install
 
-### Install as Claude Code plugin
+### Claude Code plugin (recommended)
 
 ```
 /plugin marketplace add Webhooks-Ltd/claude-plugins
 /plugin install sharp-recon
 ```
 
-The launcher automatically downloads the correct pre-built binary for your platform on first use.
+The plugin downloads the correct pre-built binary for your platform automatically on first use, and updates itself when new releases are available.
 
-### Or add to Claude Code manually
+### VS Code / Cursor
 
-```bash
-claude mcp add --scope user sharp-recon -- bash "/path/to/SharpRecon/launcher.sh"
-```
-
-### Add to VS Code / Cursor
-
-Create `.vscode/mcp.json` in your workspace:
+Add to `.vscode/mcp.json` in your workspace:
 
 ```json
 {
   "servers": {
     "sharp-recon": {
       "type": "stdio",
-      "command": "bash",
-      "args": ["/path/to/SharpRecon/launcher.sh"]
+      "command": "node",
+      "args": ["/path/to/SharpRecon/launcher.js"]
     }
   }
 }
 ```
 
+### Any MCP client
+
+SharpRecon speaks stdio MCP. Point your client at the launcher:
+
+```bash
+node /path/to/SharpRecon/launcher.js
+```
+
 ## Tools
 
-| Tool | Description | Key parameters |
-|------|-------------|----------------|
-| `nuget_search` | Search NuGet.org for packages by query | `query`, `take` (1-20, default 10) |
-| `nuget_download` | Download a NuGet package to the local cache | `packageId`, `version` (exact, wildcard, or omit for latest) |
-| `assembly_list` | List assemblies in a cached package, grouped by TFM | `packageId`, `version`, `tfm` (optional) |
-| `type_list` | List all public types in an assembly, grouped by namespace | `packageId`, `version`, `assemblyName`, `ns` (optional) |
-| `type_search` | Search types by name across all assemblies in a package | `packageId`, `version`, `query` |
-| `type_detail` | Full type declaration with XML docs and member signatures | `packageId`, `version`, `typeName` |
-| `member_detail` | All overload signatures and XML docs for a single member | `packageId`, `version`, `typeName`, `memberName` |
-| `decompile_type` | Decompile a type to C# source | `packageId`, `version`, `typeName`, `maxLength` (optional) |
-| `decompile_member` | Decompile a single member to C# source | `packageId`, `version`, `typeName`, `memberName`, `parameterTypes` (optional) |
+Nine tools arranged as a progressive drill-down pipeline -- start broad, narrow as needed:
 
-All inspection and decompilation tools require the **exact version** returned by `nuget_download`. Assembly names are specified without the `.dll` extension. When `tfm` is omitted, the server auto-selects the highest available (`net*` > `netstandard*` > `netcoreapp*`).
+| Tool | Purpose |
+|------|---------|
+| `nuget_search` | Find packages on NuGet.org by keyword |
+| `nuget_download` | Download a package to the local cache (exact, wildcard, or latest version) |
+| `assembly_list` | List assemblies in a package, grouped by target framework |
+| `type_list` | List all public types in an assembly, grouped by namespace |
+| `type_search` | Search for types by name across all assemblies in a package |
+| `type_detail` | Get the full type declaration: XML docs, base types, and all member signatures |
+| `member_detail` | Get all overload signatures and XML docs for a specific member |
+| `decompile_type` | Decompile a type to C# source code |
+| `decompile_member` | Decompile a single member to C# source code |
+
+**Key conventions:**
+- All tools after `nuget_download` require the **exact version** it returns.
+- Assembly names omit the `.dll` extension.
+- Type names must be fully qualified (e.g. `Newtonsoft.Json.JsonConvert`).
+- When `tfm` is omitted, the highest available framework is selected automatically.
+- `type_detail` and `member_detail` are fast (no decompilation). Use `decompile_*` only when you need implementation source.
 
 ## Skills
 
-When installed as a Claude Code plugin, the following slash commands are available:
+When installed as a Claude Code plugin, two slash commands provide guided workflows:
 
-| Skill | Description | Usage |
-|-------|-------------|-------|
-| `/investigate-package` | Guided step-by-step investigation of a NuGet package | `/investigate-package Newtonsoft.Json` |
-| `/compare-versions` | Compare public API surface between two package versions | `/compare-versions Newtonsoft.Json 12.0.3 13.0.3` |
+| Skill | Description | Example |
+|-------|-------------|---------|
+| `/investigate-package` | Step-by-step investigation of a NuGet package -- download, browse types, read signatures, decompile | `/investigate-package Newtonsoft.Json` |
+| `/compare-versions` | Compare the public API surface between two versions to find breaking changes and new APIs | `/compare-versions Newtonsoft.Json 12.0.3 13.0.3` |
 
 ## Typical workflow
 
-An agent drills down from package to source through progressively narrower tools:
+An agent drills down from package search to source through progressively narrower tools:
 
 ```
-nuget_search            -- "Find a JSON serialization library"
-  nuget_download        -- "Get me Newtonsoft.Json 13.*"
-  assembly_list         -- "What assemblies and TFMs does it contain?"
-    type_search         -- "Find types matching 'JsonConvert'"
-      type_detail       -- "Show me the full declaration and member signatures"
-        member_detail   -- "Show all overloads of SerializeObject with XML docs"
-        decompile_member -- "Show me the source of SerializeObject(object)"
+nuget_search             Find a JSON serialization library
+  nuget_download         Download Newtonsoft.Json 13.*
+  assembly_list          What assemblies and TFMs does it contain?
+    type_search          Find types matching "JsonConvert"
+      type_detail        Full declaration and member signatures
+        member_detail    All overloads of SerializeObject with docs
+        decompile_member Source of SerializeObject(object)
 ```
 
-`type_detail` returns signatures and XML docs without decompilation overhead. Use `decompile_type` or `decompile_member` only when the agent needs implementation source.
+## Launcher
+
+The `launcher.js` script handles binary management so you don't have to:
+
+- **Auto-download** -- On first run, fetches the correct release binary for your platform (win-x64, linux-x64, osx-x64, osx-arm64) from GitHub Releases.
+- **Auto-update** -- On subsequent runs, checks for newer releases and upgrades in place.
+- **Shadow-copy** -- Copies binaries to a temp directory before launch, preventing file locks during rebuilds. Stale copies are cleaned up automatically.
 
 ## Building from source
 
-Requires .NET 10.0 SDK.
+Requires [.NET 10.0 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
+# Build
 dotnet build
-dotnet run --project tests/SharpRecon.Tests
-```
 
-## Shadow-copy launcher
+# Run tests
+dotnet test
 
-The `launcher.sh` script copies the published binaries to a temporary directory before running the server. This prevents file-locking conflicts when you rebuild the project while the MCP server is still running. Stale shadow copies older than one hour are cleaned up automatically on launch.
-
-If no published binaries are found, the launcher automatically downloads the latest release from GitHub for your platform (win-x64, linux-x64, osx-x64, osx-arm64).
-
-When developing from source, **republish** before restarting the MCP server — the launcher reads from the publish directory, not the build output:
-
-```bash
+# Publish (required before the launcher can use local binaries)
 dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish
 ```
 
+When developing locally, republish after code changes -- the launcher reads from the publish directory, not build output.
+
 ## License
 
-MIT
+[MIT](LICENSE)

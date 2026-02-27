@@ -42,7 +42,6 @@ Lowercase after prefix, imperative mood, under 72 chars. Optional scope: `feat(i
 
 - `src/SharpRecon/NuGet/` — NuGet download service and tools
 - `src/SharpRecon/Inspection/` — Type inspection, signature rendering, XML docs, and tools
-- `src/SharpRecon/Prompts/` — MCP prompt templates (workflow guidance for LLMs)
 - `skills/` — Plugin skills (slash commands for Claude Code)
 - `src/SharpRecon/Decompilation/` — ICSharpCode.Decompiler wrapper and tools
 - `src/SharpRecon/Infrastructure/` — Package cache, framework resolution, dependency resolution
