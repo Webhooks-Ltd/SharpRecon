@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Record detection heuristic (best-effort)
 - Shadow-copy launcher script for file-locking prevention
 - Claude Code plugin support (`.claude-plugin/plugin.json` + `.mcp.json`)
+- Auto-download of pre-built binaries from GitHub releases on first launch
+- GitHub Actions release workflow for cross-platform self-contained builds (win-x64, linux-x64, osx-x64, osx-arm64)
 
 ### Fixed
 

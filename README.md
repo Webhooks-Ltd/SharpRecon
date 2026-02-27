@@ -26,11 +26,7 @@ dotnet publish src/SharpRecon/SharpRecon.csproj -c Release -o src/SharpRecon/bin
 /plugin install sharp-recon
 ```
 
-Then build once inside the plugin directory:
-
-```bash
-dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish
-```
+The launcher automatically downloads the correct pre-built binary for your platform on first use.
 
 ### Or add to Claude Code manually
 
@@ -97,7 +93,9 @@ dotnet run --project tests/SharpRecon.Tests
 
 The `launcher.ps1` script copies the published binaries to a temporary directory before running the server. This prevents file-locking conflicts when you rebuild the project while the MCP server is still running. Stale shadow copies older than one hour are cleaned up automatically on launch.
 
-After making code changes, you must **republish** before restarting the MCP server — the launcher reads from the publish directory, not the build output:
+If no published binaries are found, the launcher automatically downloads the latest release from GitHub for your platform (win-x64, linux-x64, osx-x64, osx-arm64).
+
+When developing from source, **republish** before restarting the MCP server — the launcher reads from the publish directory, not the build output:
 
 ```bash
 dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish

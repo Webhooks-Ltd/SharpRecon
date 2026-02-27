@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            ext: zip
+          - rid: linux-x64
+            os: ubuntu-latest
+            ext: tar.gz
+          - rid: osx-x64
+            os: macos-latest
+            ext: tar.gz
+          - rid: osx-arm64
+            os: macos-latest
+            ext: tar.gz
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish self-contained binary
+        run: >
+          dotnet publish src/SharpRecon/SharpRecon.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained
+          -p:PublishSingleFile=true
+          -o publish
+
+      - name: Archive (zip)
+        if: matrix.ext == 'zip'
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath sharp-recon-${{ matrix.rid }}.zip
+
+      - name: Archive (tar.gz)
+        if: matrix.ext == 'tar.gz'
+        run: tar -czf sharp-recon-${{ matrix.rid }}.tar.gz -C publish .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sharp-recon-${{ matrix.rid }}
+          path: sharp-recon-${{ matrix.rid }}.${{ matrix.ext }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: >
+          gh release create "$TAG"
+          artifacts/*
+          --repo "${{ github.repository }}"
+          --title "$TAG"
+          --generate-notes
