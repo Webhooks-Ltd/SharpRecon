@@ -33,12 +33,10 @@ install_release() {
     local rid ext url tmp_file
 
     rid="$(get_rid)"
-    ext="tar.gz"
-    [[ "$rid" == win-* ]] && ext="zip"
 
     local url_base="releases/latest/download"
     [[ -n "$tag" ]] && url_base="releases/download/$tag"
-    url="https://github.com/$REPO/$url_base/sharp-recon-${rid}.${ext}"
+    url="https://github.com/$REPO/$url_base/sharp-recon-${rid}.tar.gz"
 
     echo "Downloading SharpRecon ($rid) from GitHub releases..." >&2
     tmp_file="$(mktemp)"
@@ -52,11 +50,7 @@ install_release() {
     rm -rf "$target_dir"
     mkdir -p "$target_dir"
 
-    if [[ "$ext" == "zip" ]]; then
-        unzip -qo "$tmp_file" -d "$target_dir"
-    else
-        tar -xzf "$tmp_file" -C "$target_dir"
-    fi
+    tar -xzf "$tmp_file" -C "$target_dir"
 
     rm -f "$tmp_file"
 

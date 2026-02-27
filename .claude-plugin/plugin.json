@@ -1,6 +1,6 @@
 {
   "name": "sharp-recon",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": ".NET MCP server for NuGet package inspection, type introspection, and decompilation",
   "author": {
     "name": "Webhooks Ltd"
