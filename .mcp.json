@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sharp-recon": {
+      "command": "pwsh",
+      "args": ["-File", "${CLAUDE_PLUGIN_ROOT}/launcher.ps1"]
+    }
+  }
+}

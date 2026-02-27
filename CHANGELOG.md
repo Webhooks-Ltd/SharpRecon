@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full C# signature rendering with nullability, generics, constraints, default values
 - Record detection heuristic (best-effort)
 - Shadow-copy launcher script for file-locking prevention
+- Claude Code plugin support (`.claude-plugin/plugin.json` + `.mcp.json`)
 
 ### Fixed
 

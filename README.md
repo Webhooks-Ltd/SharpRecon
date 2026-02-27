@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" alt="SharpRecon logo" width="128" />
+</p>
+
 # SharpRecon
 
 [![CI](https://github.com/Webhooks-Ltd/SharpRecon/actions/workflows/ci.yml/badge.svg)](https://github.com/Webhooks-Ltd/SharpRecon/actions/workflows/ci.yml)
@@ -15,7 +19,20 @@ A .NET 10.0 stdio MCP server that lets AI agents inspect the .NET ecosystem -- d
 dotnet publish src/SharpRecon/SharpRecon.csproj -c Release -o src/SharpRecon/bin/publish
 ```
 
-### Add to Claude Code
+### Install as Claude Code plugin
+
+```
+/plugin marketplace add Webhooks-Ltd/claude-plugins
+/plugin install sharp-recon
+```
+
+Then build once inside the plugin directory:
+
+```bash
+dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish
+```
+
+### Or add to Claude Code manually
 
 ```bash
 claude mcp add --scope user sharp-recon -- pwsh -File "/path/to/SharpRecon/launcher.ps1"
