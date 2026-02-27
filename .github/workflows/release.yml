@@ -55,7 +55,6 @@ jobs:
           -c Release
           -r ${{ matrix.rid }}
           --self-contained
-          -p:PublishSingleFile=true
           -o publish
 
       - name: Archive
