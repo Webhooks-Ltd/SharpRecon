@@ -361,6 +361,9 @@ internal sealed class AssemblyInspector : IAssemblyInspector
         var name = method is ConstructorInfo ? "#ctor" : method.Name;
         var docId = $"M:{type.FullName}.{name}";
 
+        if (method.IsGenericMethod)
+            docId += $"``{method.GetGenericArguments().Length}";
+
         var parameters = method.GetParameters();
         if (parameters.Length > 0)
         {

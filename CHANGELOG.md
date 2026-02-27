@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7]
+
+### Fixed
+
+- XML doc comments missing on generic methods (e.g. `DeserializeObject<T>`) due to missing generic arity suffix in doc ID lookup
+
 ## [0.1.6]
 
 ### Changed
