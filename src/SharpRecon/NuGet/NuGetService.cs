@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using global::NuGet.Packaging.Core;
@@ -11,12 +13,15 @@ namespace SharpRecon.NuGet;
 internal sealed partial class NuGetService : INuGetService
 {
     private const string NuGetSourceUrl = "https://api.nuget.org/v3/index.json";
+    private const string NuGetSearchUrl = "https://azuresearch-usnc.nuget.org/query";
 
     private readonly IPackageCache _packageCache;
+    private readonly HttpClient _httpClient;
 
-    public NuGetService(IPackageCache packageCache)
+    public NuGetService(IPackageCache packageCache, HttpClient httpClient)
     {
         _packageCache = packageCache;
+        _httpClient = httpClient;
     }
 
     public async Task<NuGetDownloadResult> DownloadPackageAsync(string packageId, string? version, CancellationToken ct)
@@ -39,6 +44,41 @@ internal sealed partial class NuGetService : INuGetService
 
         return new NuGetDownloadResult(packageId, normalizedVersion, cachePath, tfms);
     }
+
+    public async Task<IReadOnlyList<NuGetSearchResult>> SearchAsync(string query, int take, CancellationToken ct)
+    {
+        var url = $"{NuGetSearchUrl}?q={Uri.EscapeDataString(query)}&take={take}&semVerLevel=2.0.0";
+        using var response = await _httpClient.GetAsync(url, ct);
+        response.EnsureSuccessStatusCode();
+
+        using var stream = await response.Content.ReadAsStreamAsync(ct);
+        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+
+        var results = new List<NuGetSearchResult>();
+        foreach (var item in doc.RootElement.GetProperty("data").EnumerateArray())
+        {
+            var packageId = item.GetProperty("id").GetString()!;
+            var version = item.GetProperty("version").GetString()!;
+            var description = item.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : "";
+            var totalDownloads = item.TryGetProperty("totalDownloads", out var dl) ? dl.GetInt64() : 0;
+            var verified = item.TryGetProperty("verified", out var v) && v.GetBoolean();
+
+            if (description.Length > 200)
+                description = description[..197] + "...";
+
+            results.Add(new NuGetSearchResult(packageId, version, description, totalDownloads, verified));
+        }
+
+        return results;
+    }
+
+    internal static string FormatDownloadCount(long count) => count switch
+    {
+        >= 1_000_000_000 => $"{count / 1_000_000_000.0:0.#}B",
+        >= 1_000_000 => $"{count / 1_000_000.0:0.#}M",
+        >= 1_000 => $"{count / 1_000.0:0.#}K",
+        _ => count.ToString()
+    };
 
     internal static VersionRange ParseVersionPattern(string? version)
     {
@@ -160,7 +200,7 @@ internal sealed partial class NuGetService : INuGetService
 
     public static IServiceCollection AddNuGetService(IServiceCollection services)
     {
-        services.AddSingleton<INuGetService, NuGetService>();
+        services.AddHttpClient<INuGetService, NuGetService>();
         return services;
     }
 }

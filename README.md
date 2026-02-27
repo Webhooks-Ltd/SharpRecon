@@ -54,6 +54,7 @@ Create `.vscode/mcp.json` in your workspace:
 
 | Tool | Description | Key parameters |
 |------|-------------|----------------|
+| `nuget_search` | Search NuGet.org for packages by query | `query`, `take` (1-20, default 10) |
 | `nuget_download` | Download a NuGet package to the local cache | `packageId`, `version` (exact, wildcard, or omit for latest) |
 | `assembly_list` | List assemblies in a cached package, grouped by TFM | `packageId`, `version`, `tfm` (optional) |
 | `type_list` | List all public types in an assembly, grouped by namespace | `packageId`, `version`, `assemblyName`, `ns` (optional) |
@@ -70,7 +71,8 @@ All inspection and decompilation tools require the **exact version** returned by
 An agent drills down from package to source through progressively narrower tools:
 
 ```
-nuget_download          -- "Get me Newtonsoft.Json 13.*"
+nuget_search            -- "Find a JSON serialization library"
+  nuget_download        -- "Get me Newtonsoft.Json 13.*"
   assembly_list         -- "What assemblies and TFMs does it contain?"
     type_search         -- "Find types matching 'JsonConvert'"
       type_detail       -- "Show me the full declaration and member signatures"

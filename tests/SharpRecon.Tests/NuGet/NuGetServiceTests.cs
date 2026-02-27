@@ -92,4 +92,19 @@ public sealed class NuGetServiceTests
     {
         Should.Throw<ArgumentException>(() => NuGetService.ParseVersionPattern("*"));
     }
+
+    [Theory]
+    [InlineData(0, "0")]
+    [InlineData(999, "999")]
+    [InlineData(1_000, "1K")]
+    [InlineData(1_500, "1.5K")]
+    [InlineData(12_345, "12.3K")]
+    [InlineData(1_000_000, "1M")]
+    [InlineData(12_345_678, "12.3M")]
+    [InlineData(1_000_000_000, "1B")]
+    [InlineData(2_100_000_000, "2.1B")]
+    public void FormatDownloadCount_FormatsCorrectly(long count, string expected)
+    {
+        NuGetService.FormatDownloadCount(count).ShouldBe(expected);
+    }
 }
