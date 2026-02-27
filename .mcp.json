@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "sharp-recon": {
-      "command": "bash",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/launcher.sh"]
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/launcher.js"]
     }
   }
 }

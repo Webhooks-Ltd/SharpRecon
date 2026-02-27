@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.3]
+### Added
+
+- `nuget_search` — Search NuGet.org for packages by query, returning package IDs, versions, descriptions, and download counts
+
+## [0.1.4]
 
 ### Fixed
 
+- Plugin fails to start on Windows because `bash` is not in the system PATH; replaced `launcher.sh` with cross-platform `launcher.js` using Node.js
 - Launcher fails on Windows because it expects a `.zip` release asset but CI publishes `.tar.gz` for all platforms
 
 ## [0.1.2]
