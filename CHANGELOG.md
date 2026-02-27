@@ -31,3 +31,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Assembly loading error when inspecting framework targeting pack packages (e.g. `Microsoft.NETCore.App.Ref`) where the same assembly appeared from both package and framework paths
+- Self-contained release binaries now include runtime DLLs on disk so `MetadataLoadContext` works on machines without the .NET SDK
