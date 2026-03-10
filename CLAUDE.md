@@ -7,7 +7,6 @@
 - When adding or changing features, update `README.md` to reflect the current state
 - When adding or changing features, update `CHANGELOG.md` under the `[Unreleased]` section
 - Don't add comments to code unless absolutely necessary
-- Read `openspec/project.md` for full project context, architecture, and conventions
 - Read `openspec/specs/` for detailed requirements and scenarios before implementing
 - Use `openspec status` to check current change progress
 - After code changes, run `dotnet publish src/SharpRecon/SharpRecon.csproj -o src/SharpRecon/bin/publish` before restarting the MCP server — the launcher reads from the publish directory, not build output

@@ -1,0 +1,16 @@
+context: |
+  SharpRecon is a .NET MCP server (stdio transport) that gives AI coding assistants
+  deep access to NuGet package internals: search, download, assembly listing, type
+  inspection with XML docs, and decompilation via ICSharpCode.Decompiler.
+
+  Architecture: Three vertical slices (NuGet/, Inspection/, Decompilation/) plus
+  shared Infrastructure/ for package cache, framework resolution, and dependency
+  resolution. Interfaces at I/O boundaries only. MetadataLoadContext and
+  CSharpDecompiler created per-request, not cached.
+
+  Key constraints:
+  - Inspection uses ref/ assemblies; decompilation uses lib/
+  - All MCP tool methods return CallToolResult with IsError=true for errors
+  - Optional MCP tool params must default to null (SDK convention)
+  - TypeRenderer is static/pure — no state, no I/O
+  - Tool count should stay under ~12-13 to avoid LLM tool-selection degradation
