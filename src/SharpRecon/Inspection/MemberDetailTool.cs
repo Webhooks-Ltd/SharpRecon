@@ -12,12 +12,12 @@ internal sealed class MemberDetailTool
     [McpServerTool(Name = "member_detail")]
     [Description("Returns all overload signatures and XML docs for a specific member of a type. Fast — no decompilation. Use after type_detail to drill into one member. For implementation source, use decompile_member.")]
     public static async Task<CallToolResult> GetMemberDetailAsync(
-        [Description("NuGet package ID")] string packageId,
-        [Description("Exact package version (from nuget_download)")] string version,
+        [Description("Package or local load identifier (from nuget_download or local_load)")] string packageId,
+        [Description("Version (from nuget_download or local_load)")] string version,
         [Description("Fully qualified type name, e.g. 'Newtonsoft.Json.JsonConvert'")] string typeName,
         [Description("Member name, e.g. 'SerializeObject'. Use '.ctor' for constructors.")] string memberName,
         IAssemblyInspector inspector,
-        IPackageCache packageCache,
+        IAssemblySource assemblySource,
         CancellationToken ct,
         [Description("Fully qualified CLR parameter types for overload filtering, e.g. ['System.Object', 'System.String']. Use CLR names, not C# aliases (string->System.String, int->System.Int32, bool->System.Boolean, object->System.Object).")] string[]? parameterTypes = null,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null,
@@ -25,15 +25,23 @@ internal sealed class MemberDetailTool
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {
-            var versionError = ToolHelper.ValidateExactVersion(version);
-            if (versionError is not null) throw new InvalidOperationException(versionError);
+            if (!packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            {
+                var versionError = ToolHelper.ValidateExactVersion(version);
+                if (versionError is not null) throw new InvalidOperationException(versionError);
+            }
 
             var paramError = ToolHelper.ValidateParameterTypes(parameterTypes);
             if (paramError is not null) throw new InvalidOperationException(paramError);
 
-            if (!packageCache.IsPackageCached(packageId, version))
+            if (!assemblySource.IsRegistered(packageId, version))
+            {
+                var hint = packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase)
+                    ? "Call local_load first."
+                    : "Call nuget_download first.";
                 throw new InvalidOperationException(
-                    $"Package '{packageId}' version '{version}' not found in cache. Call nuget_download first.");
+                    $"Source '{packageId}' version '{version}' not found. {hint}");
+            }
 
             var result = await inspector.GetMemberDetailAsync(packageId, version, tfm, assemblyName, typeName, memberName, parameterTypes, ct);
 

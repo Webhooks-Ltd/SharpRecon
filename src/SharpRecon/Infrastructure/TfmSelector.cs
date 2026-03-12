@@ -13,6 +13,15 @@ internal static class TfmSelector
         return SelectBest(tfms);
     }
 
+    public static string SelectBest(IAssemblySource assemblySource, string sourceId, string version)
+    {
+        var tfms = assemblySource.GetAvailableTfms(sourceId, version);
+        if (tfms.Count == 0)
+            throw new InvalidOperationException($"No TFMs available in {sourceId} {version}.");
+
+        return SelectBest(tfms);
+    }
+
     public static string SelectBest(IReadOnlyList<string> tfms)
     {
         var netTfms = tfms

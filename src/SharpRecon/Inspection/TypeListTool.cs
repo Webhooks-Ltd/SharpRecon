@@ -12,23 +12,31 @@ internal sealed class TypeListTool
     [McpServerTool(Name = "type_list")]
     [Description("Lists all public types in a specific assembly, grouped by namespace. Requires assemblyName (from assembly_list). Returns type full names and kinds (class, struct, enum, interface, delegate). For name-based search across all assemblies, use type_search instead.")]
     public static async Task<CallToolResult> ListTypesAsync(
-        [Description("NuGet package ID")] string packageId,
-        [Description("Exact package version (from nuget_download)")] string version,
+        [Description("Package or local load identifier (from nuget_download or local_load)")] string packageId,
+        [Description("Version (from nuget_download or local_load)")] string version,
         [Description("Assembly name without .dll extension")] string assemblyName,
         IAssemblyInspector inspector,
-        IPackageCache packageCache,
+        IAssemblySource assemblySource,
         CancellationToken ct,
         [Description("TFM, e.g. 'net8.0'. Omit to auto-select highest.")] string? tfm = null,
         [Description("Filter to types in this namespace only")] string? ns = null)
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {
-            var versionError = ToolHelper.ValidateExactVersion(version);
-            if (versionError is not null) throw new InvalidOperationException(versionError);
+            if (!packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            {
+                var versionError = ToolHelper.ValidateExactVersion(version);
+                if (versionError is not null) throw new InvalidOperationException(versionError);
+            }
 
-            if (!packageCache.IsPackageCached(packageId, version))
+            if (!assemblySource.IsRegistered(packageId, version))
+            {
+                var hint = packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase)
+                    ? "Call local_load first."
+                    : "Call nuget_download first.";
                 throw new InvalidOperationException(
-                    $"Package '{packageId}' version '{version}' not found in cache. Call nuget_download first.");
+                    $"Source '{packageId}' version '{version}' not found. {hint}");
+            }
 
             var result = await inspector.GetTypesAsync(packageId, version, tfm, assemblyName, ns, ct);
 

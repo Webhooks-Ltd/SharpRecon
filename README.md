@@ -52,22 +52,24 @@ node /path/to/SharpRecon/launcher.js
 
 ## Tools
 
-Nine tools arranged as a progressive drill-down pipeline — start broad, narrow as needed:
+Ten tools arranged as a progressive drill-down pipeline — start broad, narrow as needed:
 
 | Tool | Purpose |
 |------|---------|
 | `nuget_search` | Find packages on NuGet.org by keyword |
 | `nuget_download` | Download a package and return version, TFMs, and health (deprecation, vulnerabilities, publish date) |
-| `assembly_list` | List assemblies in a package, grouped by target framework |
+| `local_load` | Load a local .NET assembly (.dll/.exe) or directory for inspection and decompilation |
+| `assembly_list` | List assemblies in a package or local load, grouped by target framework |
 | `type_list` | List all public types in an assembly, grouped by namespace |
-| `type_search` | Search for types by name across all assemblies in a package |
+| `type_search` | Search for types by name across all assemblies in a package or local load |
 | `type_detail` | Get the full type declaration: XML docs, base types, and all member signatures |
 | `member_detail` | Get all overload signatures and XML docs for a specific member |
 | `decompile_type` | Decompile a type to C# source code |
 | `decompile_member` | Decompile a single member to C# source code |
 
 **Key conventions:**
-- All tools after `nuget_download` require the **exact version** it returns.
+- Inspection and decompilation tools work with both NuGet packages (`nuget_download`) and local assemblies (`local_load`).
+- All tools after `nuget_download` / `local_load` require the identifiers they return.
 - Assembly names omit the `.dll` extension.
 - Type names must be fully qualified (e.g. `Newtonsoft.Json.JsonConvert`).
 - When `tfm` is omitted, the highest available framework is selected automatically.
@@ -94,6 +96,16 @@ nuget_search             Find a JSON serialization library
       type_detail        Full declaration and member signatures
         member_detail    All overloads of SerializeObject with docs
         decompile_member Source of SerializeObject(object)
+```
+
+For local assemblies, the same pipeline starts with `local_load` instead:
+
+```
+local_load               Load a build output directory or single DLL
+  assembly_list          What assemblies were loaded?
+    type_search          Find types matching "UserService"
+      type_detail        Full declaration and member signatures
+        decompile_type   Source of the entire type
 ```
 
 ## Launcher

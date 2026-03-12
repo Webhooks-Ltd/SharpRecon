@@ -12,11 +12,11 @@ internal sealed class TypeSearchTool
     [McpServerTool(Name = "type_search")]
     [Description("Searches for public types by name across all assemblies in a package. Case-insensitive substring match. Does not require assemblyName. For a complete listing of one assembly, use type_list instead.")]
     public static async Task<CallToolResult> SearchTypesAsync(
-        [Description("NuGet package ID")] string packageId,
-        [Description("Exact package version (from nuget_download)")] string version,
+        [Description("Package or local load identifier (from nuget_download or local_load)")] string packageId,
+        [Description("Version (from nuget_download or local_load)")] string version,
         [Description("Search string (case-insensitive substring match)")] string query,
         IAssemblyInspector inspector,
-        IPackageCache packageCache,
+        IAssemblySource assemblySource,
         CancellationToken ct,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null,
         [Description("Scope search to a single assembly (without .dll)")] string? assemblyName = null,
@@ -24,12 +24,20 @@ internal sealed class TypeSearchTool
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {
-            var versionError = ToolHelper.ValidateExactVersion(version);
-            if (versionError is not null) throw new InvalidOperationException(versionError);
+            if (!packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            {
+                var versionError = ToolHelper.ValidateExactVersion(version);
+                if (versionError is not null) throw new InvalidOperationException(versionError);
+            }
 
-            if (!packageCache.IsPackageCached(packageId, version))
+            if (!assemblySource.IsRegistered(packageId, version))
+            {
+                var hint = packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase)
+                    ? "Call local_load first."
+                    : "Call nuget_download first.";
                 throw new InvalidOperationException(
-                    $"Package '{packageId}' version '{version}' not found in cache. Call nuget_download first.");
+                    $"Source '{packageId}' version '{version}' not found. {hint}");
+            }
 
             var effectiveMaxResults = maxResults is null or <= 0 ? 100 : maxResults.Value;
 

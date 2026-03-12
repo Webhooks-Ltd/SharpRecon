@@ -7,16 +7,16 @@ namespace SharpRecon.Inspection;
 
 internal sealed class AssemblyInspector : IAssemblyInspector
 {
-    private readonly IPackageCache _packageCache;
+    private readonly IAssemblySource _assemblySource;
     private readonly AssemblyPathResolver _pathResolver;
     private readonly XmlDocParser _xmlDocParser;
 
     public AssemblyInspector(
-        IPackageCache packageCache,
+        IAssemblySource assemblySource,
         AssemblyPathResolver pathResolver,
         XmlDocParser xmlDocParser)
     {
-        _packageCache = packageCache;
+        _assemblySource = assemblySource;
         _pathResolver = pathResolver;
         _xmlDocParser = xmlDocParser;
     }
@@ -25,7 +25,7 @@ internal sealed class AssemblyInspector : IAssemblyInspector
         string packageId, string version, string? tfm, string assemblyName, string? ns, CancellationToken ct)
     {
         tfm ??= SelectBestTfm(packageId, version);
-        var resolution = await _pathResolver.ResolveAsync(packageId, version, tfm, assemblyName, preferRef: true, ct);
+        var resolution = await ResolveAssemblyAsync(packageId, version, tfm, assemblyName, preferRef: true, ct);
         if (resolution.PrimaryAssemblyPath == string.Empty)
             throw new InvalidOperationException(
                 $"Assembly '{assemblyName}' not found in {packageId} {version} ({tfm}).");
@@ -52,14 +52,14 @@ internal sealed class AssemblyInspector : IAssemblyInspector
 
         var assemblyNames = assemblyName is not null
             ? [assemblyName]
-            : _packageCache.GetAssembliesForTfm(packageId, version, tfm);
+            : _assemblySource.GetAssembliesForTfm(packageId, version, tfm);
 
         var allMatches = new List<TypeSearchEntry>();
         IReadOnlyList<string> lastUnresolved = [];
 
         foreach (var asmName in assemblyNames)
         {
-            var resolution = await _pathResolver.ResolveAsync(packageId, version, tfm, asmName, preferRef: true, ct);
+            var resolution = await ResolveAssemblyAsync(packageId, version, tfm, asmName, preferRef: true, ct);
             if (resolution.PrimaryAssemblyPath == string.Empty)
                 continue;
 
@@ -127,7 +127,7 @@ internal sealed class AssemblyInspector : IAssemblyInspector
     {
         if (assemblyName is not null)
         {
-            var resolution = await _pathResolver.ResolveAsync(packageId, version, tfm, assemblyName, preferRef, ct);
+            var resolution = await ResolveAssemblyAsync(packageId, version, tfm, assemblyName, preferRef, ct);
             if (resolution.PrimaryAssemblyPath == string.Empty)
                 throw new InvalidOperationException(
                     $"Assembly '{assemblyName}' not found in {packageId} {version} ({tfm}).");
@@ -147,10 +147,10 @@ internal sealed class AssemblyInspector : IAssemblyInspector
             }
         }
 
-        var assemblies = _packageCache.GetAssembliesForTfm(packageId, version, tfm);
+        var assemblies = _assemblySource.GetAssembliesForTfm(packageId, version, tfm);
         foreach (var asmName in assemblies)
         {
-            var resolution = await _pathResolver.ResolveAsync(packageId, version, tfm, asmName, preferRef, ct);
+            var resolution = await ResolveAssemblyAsync(packageId, version, tfm, asmName, preferRef, ct);
             if (resolution.PrimaryAssemblyPath == string.Empty)
                 continue;
 
@@ -169,7 +169,17 @@ internal sealed class AssemblyInspector : IAssemblyInspector
 
     private string SelectBestTfm(string packageId, string version)
     {
-        return TfmSelector.SelectBest(_packageCache, packageId, version);
+        var tfms = _assemblySource.GetAvailableTfms(packageId, version);
+        return TfmSelector.SelectBest(tfms);
+    }
+
+    private async Task<AssemblyResolutionResult> ResolveAssemblyAsync(
+        string packageId, string version, string tfm, string assemblyName, bool preferRef, CancellationToken ct)
+    {
+        if (packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            return await _pathResolver.ResolveLocalAsync(packageId, version, tfm, assemblyName, _assemblySource, ct);
+
+        return await _pathResolver.ResolveAsync(packageId, version, tfm, assemblyName, preferRef, ct);
     }
 
     private static Type[] GetPublicTypes(Assembly assembly)
@@ -238,23 +248,9 @@ internal sealed class AssemblyInspector : IAssemblyInspector
     private XmlDocCollection? LoadXmlDocs(string packageId, string version, string tfm, string assemblyName)
     {
         var cacheKey = $"{packageId}/{version}/{tfm}/{assemblyName}";
-        var xmlPath = ResolveXmlDocPath(packageId, version, tfm, assemblyName);
+        var xmlPath = _assemblySource.GetXmlDocPath(packageId, version, tfm, assemblyName);
         if (xmlPath is null) return null;
         return _xmlDocParser.LoadForAssembly(xmlPath, cacheKey);
-    }
-
-    private string? ResolveXmlDocPath(string packageId, string version, string tfm, string assemblyName)
-    {
-        var packagePath = _packageCache.GetPackagePath(packageId, version);
-        var xmlFileName = assemblyName + ".xml";
-
-        var refXml = Path.Combine(packagePath, "ref", tfm, xmlFileName);
-        if (File.Exists(refXml)) return refXml;
-
-        var libXml = Path.Combine(packagePath, "lib", tfm, xmlFileName);
-        if (File.Exists(libXml)) return libXml;
-
-        return null;
     }
 
     private static string GetAssemblyFileName(string assemblyPath)

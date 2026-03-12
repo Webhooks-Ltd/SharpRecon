@@ -26,7 +26,8 @@ public sealed class AssemblyDecompilerTests
             _packageCache, frameworkResolver, cacheResolver, dependencyResolver,
             NullLogger<AssemblyPathResolver>.Instance);
 
-        return new AssemblyDecompiler(_packageCache, pathResolver);
+        var assemblySource = new NuGetAssemblySource(_packageCache);
+        return new AssemblyDecompiler(assemblySource, pathResolver);
     }
 
     [Fact]

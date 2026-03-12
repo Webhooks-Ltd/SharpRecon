@@ -1,8 +1,40 @@
-# type-inspection Specification
+## ADDED Requirements
 
-## Purpose
-TBD - created by archiving change initial-mcp-server. Update Purpose after archive.
-## Requirements
+### Requirement: Update parameter descriptions for dual-source tools
+All tools that accept both NuGet and local sources SHALL update their `packageId` parameter description to `"Package or local load identifier (from nuget_download or local_load)"` and their `version` parameter description to `"Version (from nuget_download or local_load)"`. The `assembly_list` tool description SHALL be updated from "Lists assemblies in a cached NuGet package" to "Lists assemblies in a downloaded package or local load."
+
+#### Scenario: Updated packageId description
+- **WHEN** an LLM reads the `decompile_type` tool definition
+- **THEN** the `packageId` parameter description reads `"Package or local load identifier (from nuget_download or local_load)"`
+
+#### Scenario: Updated assembly_list tool description
+- **WHEN** an LLM reads the `assembly_list` tool definition
+- **THEN** the tool description covers both NuGet packages and local loads
+
+### Requirement: Skip version validation for local sources
+Tools SHALL skip `ToolHelper.ValidateExactVersion(version)` when `packageId` starts with `local:`. The version for local sources is always the literal string `"local"`, which is not a valid NuGet version and would be rejected by the existing validation.
+
+#### Scenario: Local source bypasses version validation
+- **WHEN** a tool is called with `packageId = "local:MyApp"`, `version = "local"`
+- **THEN** `ValidateExactVersion` is not called, and the tool proceeds to local resolution
+
+#### Scenario: NuGet source still validated
+- **WHEN** a tool is called with `packageId = "Newtonsoft.Json"`, `version = "13.*"`
+- **THEN** `ValidateExactVersion` rejects the wildcard version as before
+
+### Requirement: assembly_list TFM handling for local loads
+When `assembly_list` is called for a local load, it SHALL list all managed assemblies under the single inferred TFM. If an explicit `tfm` parameter is passed for a local load, it SHALL be ignored (local loads have a single inferred TFM).
+
+#### Scenario: assembly_list for local directory load
+- **WHEN** agent calls `assembly_list` with `packageId = "local:Debug/net10.0"`, `version = "local"`
+- **THEN** the tool lists all managed assemblies from the directory, grouped under the inferred TFM, same structural layout as NuGet output
+
+#### Scenario: assembly_list with explicit TFM for local load
+- **WHEN** agent calls `assembly_list` with `packageId = "local:Debug/net10.0"`, `version = "local"`, `tfm = "net8.0"`
+- **THEN** the tool ignores the `tfm` parameter and lists assemblies under the inferred TFM
+
+## MODIFIED Requirements
+
 ### Requirement: List public types in an assembly
 The `type_list` tool SHALL list all public types exported by an assembly, grouped by namespace, with each type's kind (class, struct, interface, enum, delegate, record*). The tool SHALL accept assemblies from both NuGet packages (via `packageId`/`version`) and locally-loaded assemblies (via synthetic `local:` identifiers from `local_load`). For NuGet packages, the tool SHALL prefer `ref/` assemblies when available. For local assemblies, the tool SHALL use the file directly.
 
@@ -96,65 +128,6 @@ The `type_detail` tool SHALL return the full type declaration signature, XML doc
 - **WHEN** agent calls `type_detail` for a locally-loaded assembly that has `{assemblyName}.xml` in the same directory
 - **THEN** XML doc comments are included in the response
 
-### Requirement: Get member detail with XML docs
-The `member_detail` tool SHALL return full overload signatures and XML doc comments for a specific member of a type. The tool SHALL accept an optional `parameterTypes` parameter (fully qualified CLR type names, e.g. `["System.Object", "System.String"]`) to filter to a specific overload. Use `".ctor"` as `memberName` for constructors.
-
-#### Scenario: Method with multiple overloads (no filter)
-- **WHEN** agent calls `member_detail` for `SerializeObject` on `Newtonsoft.Json.JsonConvert` without `parameterTypes`
-- **THEN** the tool returns all overloads, each with:
-  - Full C# signature (return type, method name, generic parameters, parameters with types/names/modifiers/defaults)
-  - XML doc comment (summary, param descriptions, returns, exceptions, remarks)
-
-#### Scenario: Filter to specific overload
-- **WHEN** agent calls `member_detail` for `SerializeObject` with `parameterTypes: ["System.Object", "System.Type"]`
-- **THEN** the tool returns only the overload matching those parameter types
-
-#### Scenario: Constructor lookup
-- **WHEN** agent calls `member_detail` with memberName `".ctor"`
-- **THEN** the tool returns all public constructor overloads with their signatures and XML docs
-
-#### Scenario: Property detail
-- **WHEN** agent calls `member_detail` for a property
-- **THEN** the response includes the property type, name, accessors (get/set/init), and XML docs
-
-#### Scenario: Member not found
-- **WHEN** agent calls `member_detail` with a member name that does not exist on the type
-- **THEN** the tool returns a structured error message listing available members of the type
-
-#### Scenario: Invalid parameterTypes format
-- **WHEN** agent passes C# keyword names (e.g. `"string"` instead of `"System.String"`) in `parameterTypes`
-- **THEN** the tool returns a structured error: "Use fully qualified CLR type names in parameterTypes (e.g. 'System.String', not 'string')"
-
-### Requirement: Signature rendering fidelity
-All type and member signatures SHALL be rendered as valid C# declarations, including:
-- Access modifiers (`public`, `protected`)
-- Type kind keywords (`class`, `struct`, `interface`, `enum`, `delegate`; `record` as best-effort heuristic)
-- Modifiers (`static`, `sealed`, `abstract`, `readonly`, `virtual`, `override`)
-- Generic type parameters and `where` constraints
-- Nullability annotations (`?`) — requires reading `NullableAttribute`/`NullableContextAttribute` byte encoding. This is the most complex part of signature rendering and SHALL have extensive test coverage.
-- Parameter modifiers (`ref`, `out`, `in`, `params`, `scoped`)
-- Default parameter values
-- Base type and implemented interfaces (for type declarations)
-- Return types (for methods and properties)
-
-The `async` keyword SHALL NOT be rendered — it is not present in assembly metadata and cannot be reliably inferred. Methods returning `Task<T>` or `ValueTask<T>` are not necessarily `async`.
-
-#### Scenario: Complex generic method signature
-- **WHEN** a method has generic parameters with multiple constraints
-- **THEN** the rendered signature includes all constraints in valid C# syntax, e.g. `public T Deserialize<T>(string json) where T : class, new()`
-
-#### Scenario: Nullable reference type parameters
-- **WHEN** a method has nullable reference type parameters
-- **THEN** the rendered signature includes `?` annotations, e.g. `public static string? Serialize(object? value)`
-
-#### Scenario: Default parameter values
-- **WHEN** a method has parameters with default values
-- **THEN** the rendered signature includes the defaults, e.g. `public void Log(string message, LogLevel level = LogLevel.Information)`
-
-#### Scenario: Nullability not available
-- **WHEN** an assembly was compiled without nullable annotations (no `NullableContextAttribute`)
-- **THEN** the rendered signature omits `?` annotations (no guessing)
-
 ### Requirement: Decompile type to C# source
 The `decompile_type` tool SHALL decompile a type back to C# source code using ICSharpCode.Decompiler. For NuGet packages, the tool MUST use `lib/` assemblies (not `ref/`). For local assemblies, the tool SHALL use the file directly.
 
@@ -215,37 +188,3 @@ All type inspection and decompilation tools SHALL catch all exceptions and retur
 #### Scenario: Local assembly not registered
 - **WHEN** an inspection tool is called with a `local:` packageId that has not been loaded
 - **THEN** the tool returns: "Local assembly '{name}' not loaded. Call local_load first."
-
-### Requirement: Update parameter descriptions for dual-source tools
-All tools that accept both NuGet and local sources SHALL update their `packageId` parameter description to `"Package or local load identifier (from nuget_download or local_load)"` and their `version` parameter description to `"Version (from nuget_download or local_load)"`. The `assembly_list` tool description SHALL be updated from "Lists assemblies in a cached NuGet package" to "Lists assemblies in a downloaded package or local load."
-
-#### Scenario: Updated packageId description
-- **WHEN** an LLM reads the `decompile_type` tool definition
-- **THEN** the `packageId` parameter description reads `"Package or local load identifier (from nuget_download or local_load)"`
-
-#### Scenario: Updated assembly_list tool description
-- **WHEN** an LLM reads the `assembly_list` tool definition
-- **THEN** the tool description covers both NuGet packages and local loads
-
-### Requirement: Skip version validation for local sources
-Tools SHALL skip `ToolHelper.ValidateExactVersion(version)` when `packageId` starts with `local:`. The version for local sources is always the literal string `"local"`, which is not a valid NuGet version and would be rejected by the existing validation.
-
-#### Scenario: Local source bypasses version validation
-- **WHEN** a tool is called with `packageId = "local:MyApp"`, `version = "local"`
-- **THEN** `ValidateExactVersion` is not called, and the tool proceeds to local resolution
-
-#### Scenario: NuGet source still validated
-- **WHEN** a tool is called with `packageId = "Newtonsoft.Json"`, `version = "13.*"`
-- **THEN** `ValidateExactVersion` rejects the wildcard version as before
-
-### Requirement: assembly_list TFM handling for local loads
-When `assembly_list` is called for a local load, it SHALL list all managed assemblies under the single inferred TFM. If an explicit `tfm` parameter is passed for a local load, it SHALL be ignored (local loads have a single inferred TFM).
-
-#### Scenario: assembly_list for local directory load
-- **WHEN** agent calls `assembly_list` with `packageId = "local:Debug/net10.0"`, `version = "local"`
-- **THEN** the tool lists all managed assemblies from the directory, grouped under the inferred TFM, same structural layout as NuGet output
-
-#### Scenario: assembly_list with explicit TFM for local load
-- **WHEN** agent calls `assembly_list` with `packageId = "local:Debug/net10.0"`, `version = "local"`, `tfm = "net8.0"`
-- **THEN** the tool ignores the `tfm` parameter and lists assemblies under the inferred TFM
-

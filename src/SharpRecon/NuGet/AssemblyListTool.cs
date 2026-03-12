@@ -10,16 +10,16 @@ namespace SharpRecon.NuGet;
 internal sealed class AssemblyListTool
 {
     [McpServerTool(Name = "assembly_list")]
-    [Description("Lists assemblies in a cached NuGet package, grouped by TFM. Use to discover assembly names before calling type_list. Not required before type_search (which searches all assemblies automatically).")]
+    [Description("Lists assemblies in a downloaded package or local load, grouped by TFM. Use to discover assembly names before calling type_list. Not required before type_search (which searches all assemblies automatically).")]
     public static CallToolResult ListAssemblies(
-        [Description("NuGet package ID")] string packageId,
-        [Description("Exact package version (from nuget_download)")] string version,
-        IPackageCache packageCache,
+        [Description("Package or local load identifier (from nuget_download or local_load)")] string packageId,
+        [Description("Version (from nuget_download or local_load)")] string version,
+        IAssemblySource assemblySource,
         [Description("Target framework moniker to filter by, e.g. 'net8.0'. Omit to list all TFMs.")] string? tfm = null)
     {
         try
         {
-            if (version.Contains('*'))
+            if (!packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase) && version.Contains('*'))
             {
                 return new CallToolResult
                 {
@@ -31,19 +31,22 @@ internal sealed class AssemblyListTool
                 };
             }
 
-            if (!packageCache.IsPackageCached(packageId, version))
+            if (!assemblySource.IsRegistered(packageId, version))
             {
+                var hint = packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase)
+                    ? "Call local_load first."
+                    : "Call nuget_download first.";
                 return new CallToolResult
                 {
                     Content = [new TextContentBlock
                     {
-                        Text = $"Package '{packageId}' version '{version}' not found in cache. Call nuget_download first."
+                        Text = $"Source '{packageId}' version '{version}' not found. {hint}"
                     }],
                     IsError = true,
                 };
             }
 
-            var availableTfms = packageCache.GetAvailableTfms(packageId, version);
+            var availableTfms = assemblySource.GetAvailableTfms(packageId, version);
 
             if (tfm is not null)
             {
@@ -59,7 +62,7 @@ internal sealed class AssemblyListTool
                     };
                 }
 
-                var assemblies = packageCache.GetAssembliesForTfm(packageId, version, tfm);
+                var assemblies = assemblySource.GetAssembliesForTfm(packageId, version, tfm);
                 var sb = new StringBuilder();
                 sb.AppendLine($"Package: {packageId} {version}");
                 sb.AppendLine($"TFM: {tfm}");
@@ -84,7 +87,7 @@ internal sealed class AssemblyListTool
 
             foreach (var t in availableTfms)
             {
-                var asmList = packageCache.GetAssembliesForTfm(packageId, version, t);
+                var asmList = assemblySource.GetAssembliesForTfm(packageId, version, t);
                 output.AppendLine($"{t}:");
                 foreach (var asm in asmList)
                 {

@@ -9,11 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `local_load` tool — load a local .NET assembly (.dll/.exe) or directory for inspection and decompilation without NuGet
+- Local assemblies work transparently with all existing tools via synthetic identifiers (`local:{name}` / `local`)
+- TFM inference from `TargetFrameworkAttribute` and `.runtimeconfig.json` for local assemblies
+- Directory loading with automatic managed/native assembly filtering and apphost stub detection
+- Single-file bundle detection with clear error messages
+- XML doc discovery for local assemblies (`{assemblyName}.xml` in same directory)
 - `type_detail` optional `includeInherited` parameter (default `false`) to control whether inherited members from base types are shown
 - `nuget_download` now returns package health metadata: deprecation status, vulnerability advisories, and publish date
 
 ### Changed
 
+- Internal `IAssemblySource` abstraction replaces direct `IPackageCache` coupling in inspectors and decompilers
+- Tool parameter descriptions updated to reflect both NuGet and local assembly sources
 - Launcher now downloads the exact MCP server version matching `plugin.json` instead of always fetching the latest release
 
 ### Fixed

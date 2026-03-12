@@ -12,12 +12,12 @@ namespace SharpRecon.Decompilation;
 
 internal sealed class AssemblyDecompiler
 {
-    private readonly IPackageCache _packageCache;
+    private readonly IAssemblySource _assemblySource;
     private readonly AssemblyPathResolver _pathResolver;
 
-    public AssemblyDecompiler(IPackageCache packageCache, AssemblyPathResolver pathResolver)
+    public AssemblyDecompiler(IAssemblySource assemblySource, AssemblyPathResolver pathResolver)
     {
-        _packageCache = packageCache;
+        _assemblySource = assemblySource;
         _pathResolver = pathResolver;
     }
 
@@ -63,13 +63,13 @@ internal sealed class AssemblyDecompiler
     private async Task<(string AssemblyName, AssemblyResolutionResult Resolution)> ResolveAssemblyForTypeAsync(
         string packageId, string version, string tfm, string typeName, CancellationToken ct)
     {
-        var assemblies = _packageCache.GetAssembliesForTfm(packageId, version, tfm);
+        var assemblies = _assemblySource.GetAssembliesForTfm(packageId, version, tfm);
         if (assemblies.Count == 0)
             throw new InvalidOperationException($"No assemblies found for {packageId} {version} ({tfm}).");
 
         foreach (var asmName in assemblies)
         {
-            var resolution = await _pathResolver.ResolveAsync(packageId, version, tfm, asmName, preferRef: false, ct);
+            var resolution = await ResolveAssemblyAsync(packageId, version, tfm, asmName, preferRef: false, ct);
             if (resolution.PrimaryAssemblyPath == string.Empty)
                 continue;
 
@@ -78,12 +78,21 @@ internal sealed class AssemblyDecompiler
         }
 
         var firstAsm = assemblies[0];
-        var fallbackResolution = await _pathResolver.ResolveAsync(packageId, version, tfm, firstAsm, preferRef: false, ct);
+        var fallbackResolution = await ResolveAssemblyAsync(packageId, version, tfm, firstAsm, preferRef: false, ct);
         if (fallbackResolution.PrimaryAssemblyPath == string.Empty)
             throw new InvalidOperationException(
                 $"Assembly '{firstAsm}' not found in {packageId} {version} ({tfm}).");
 
         return (firstAsm, fallbackResolution);
+    }
+
+    private async Task<AssemblyResolutionResult> ResolveAssemblyAsync(
+        string packageId, string version, string tfm, string assemblyName, bool preferRef, CancellationToken ct)
+    {
+        if (packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            return await _pathResolver.ResolveLocalAsync(packageId, version, tfm, assemblyName, _assemblySource, ct);
+
+        return await _pathResolver.ResolveAsync(packageId, version, tfm, assemblyName, preferRef, ct);
     }
 
     private static bool TypeExistsInAssembly(string assemblyPath, string typeName)

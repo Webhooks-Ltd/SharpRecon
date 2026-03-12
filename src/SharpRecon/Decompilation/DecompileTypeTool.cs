@@ -15,27 +15,36 @@ internal sealed class DecompileTypeTool
     [McpServerTool(Name = "decompile_type")]
     [Description("Decompiles a type to full C# source code. Use when you need implementation details, not just signatures. For signatures and XML docs only, use type_detail instead.")]
     public static async Task<CallToolResult> DecompileTypeAsync(
-        [Description("NuGet package ID")] string packageId,
-        [Description("Exact package version (from nuget_download)")] string version,
+        [Description("Package or local load identifier (from nuget_download or local_load)")] string packageId,
+        [Description("Version (from nuget_download or local_load)")] string version,
         [Description("Fully qualified type name, e.g. 'Newtonsoft.Json.JsonConvert'")] string typeName,
         AssemblyDecompiler decompiler,
-        IPackageCache packageCache,
+        IAssemblySource assemblySource,
+        LocalAssemblyRegistry localRegistry,
         CancellationToken ct,
         [Description("TFM filter. Omit to auto-select highest.")] string? tfm = null,
         [Description("Max output characters (default 50000). Truncates if exceeded.")] int? maxLength = null)
     {
         return await ToolHelper.ExecuteWithSemaphoreAsync(async () =>
         {
-            var versionError = ToolHelper.ValidateExactVersion(version);
-            if (versionError is not null) throw new InvalidOperationException(versionError);
+            if (!packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            {
+                var versionError = ToolHelper.ValidateExactVersion(version);
+                if (versionError is not null) throw new InvalidOperationException(versionError);
+            }
 
-            if (!packageCache.IsPackageCached(packageId, version))
+            if (!assemblySource.IsRegistered(packageId, version))
+            {
+                var hint = packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase)
+                    ? "Call local_load first."
+                    : "Call nuget_download first.";
                 throw new InvalidOperationException(
-                    $"Package '{packageId}' version '{version}' not found in cache. Call nuget_download first.");
+                    $"Source '{packageId}' version '{version}' not found. {hint}");
+            }
 
             var effectiveMaxLength = maxLength is null or <= 0 ? DefaultMaxLength : maxLength.Value;
 
-            var resolvedTfm = tfm ?? TfmSelector.SelectBest(packageCache, packageId, version);
+            var resolvedTfm = tfm ?? TfmSelector.SelectBest(assemblySource, packageId, version);
             var result = await decompiler.DecompileTypeAsync(packageId, version, resolvedTfm, typeName, ct);
 
             var sb = new StringBuilder();
@@ -48,6 +57,17 @@ internal sealed class DecompileTypeTool
             else
             {
                 sb.Append(source);
+            }
+
+            if (packageId.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            {
+                var reg = localRegistry.TryGet(packageId);
+                if (reg is { HasMixedModeAssemblies: true })
+                {
+                    sb.AppendLine();
+                    sb.AppendLine();
+                    sb.AppendLine("// Warning: This is a mixed-mode assembly. Native method bodies cannot be decompiled.");
+                }
             }
 
             if (result.UnresolvedDependencies.Count > 0)

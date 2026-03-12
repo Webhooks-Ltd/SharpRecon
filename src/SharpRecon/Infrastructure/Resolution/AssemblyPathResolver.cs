@@ -52,6 +52,58 @@ internal sealed class AssemblyPathResolver
         return result;
     }
 
+    public void InvalidateLocalCache(string sourceId)
+    {
+        var keysToRemove = _cache.Keys
+            .Where(k => k.StartsWith($"{sourceId}/", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        foreach (var key in keysToRemove)
+            _cache.TryRemove(key, out _);
+    }
+
+    public async Task<AssemblyResolutionResult> ResolveLocalAsync(
+        string sourceId, string version, string tfm, string assemblyName, IAssemblySource assemblySource, CancellationToken ct)
+    {
+        var cacheKey = $"{sourceId}/{assemblyName}";
+        if (_cache.TryGetValue(cacheKey, out var cached))
+            return cached;
+
+        var primaryPath = assemblySource.GetAssemblyPath(sourceId, version, tfm, assemblyName, preferRef: false);
+        if (primaryPath is null)
+        {
+            return new AssemblyResolutionResult(
+                string.Empty, [], [$"Assembly '{assemblyName}' not found in local source '{sourceId}'"]);
+        }
+
+        var allPaths = new List<string>();
+        var directory = Path.GetDirectoryName(primaryPath)!;
+
+        var depsJsonPath = assemblySource.GetDepsJsonPath(sourceId, version);
+        if (depsJsonPath is not null)
+        {
+            var depsPaths = DepsJsonParser.ResolveAssemblyPaths(depsJsonPath, directory);
+            allPaths.AddRange(depsPaths);
+        }
+
+        var frameworkPaths = _frameworkResolver.GetFrameworkAssemblyPaths(tfm);
+        allPaths.AddRange(frameworkPaths);
+
+        var siblingDlls = Directory.EnumerateFiles(directory, "*.dll")
+            .Where(f => !string.Equals(f, primaryPath, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        allPaths.AddRange(siblingDlls);
+
+        allPaths.Add(primaryPath);
+
+        var distinctPaths = allPaths
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var result = new AssemblyResolutionResult(primaryPath, distinctPaths, []);
+        _cache.TryAdd(cacheKey, result);
+        return result;
+    }
+
     private async Task<AssemblyResolutionResult> ResolveInternalAsync(
         string packageId,
         string version,

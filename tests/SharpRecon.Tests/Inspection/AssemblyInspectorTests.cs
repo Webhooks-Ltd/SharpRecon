@@ -28,7 +28,8 @@ public sealed class AssemblyInspectorTests
             NullLogger<AssemblyPathResolver>.Instance);
         var xmlDocParser = new XmlDocParser();
 
-        return new AssemblyInspector(_packageCache, pathResolver, xmlDocParser);
+        var assemblySource = new NuGetAssemblySource(_packageCache);
+        return new AssemblyInspector(assemblySource, pathResolver, xmlDocParser);
     }
 
     [Fact]

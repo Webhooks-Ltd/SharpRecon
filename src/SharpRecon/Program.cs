@@ -24,6 +24,10 @@ builder.Services.AddSingleton<NuspecReader>();
 builder.Services.AddSingleton<GlobalCacheAssemblyResolver>();
 builder.Services.AddSingleton<NuGetDependencyResolver>();
 builder.Services.AddSingleton<AssemblyPathResolver>();
+builder.Services.AddSingleton<LocalAssemblyRegistry>();
+builder.Services.AddSingleton<NuGetAssemblySource>();
+builder.Services.AddSingleton<LocalAssemblySource>();
+builder.Services.AddSingleton<IAssemblySource, CompositeAssemblySource>();
 builder.Services.AddSingleton<IAssemblyInspector, AssemblyInspector>();
 builder.Services.AddSingleton<AssemblyDecompiler>();
 
